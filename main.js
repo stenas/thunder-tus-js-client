@@ -125,9 +125,6 @@ export default class UploadTusMedia{
           params.content,
           {headers:{
             'Accept':'application/json',
-            // Aplication headers
-            "Authorization"        : "`Bearer ACESSO_TOKEN`",
-            "Yieap-User-Agent"     :  "USER_AGENT_CLIENT",
             // Standard TUS headers
             "Content-Type"         : "application/offset+octet-stream",
             "Tus-Resumable"        : "1.0.0",
