@@ -1,9 +1,7 @@
 let CryptoJS = require("crypto-js");
-import axios from './axios-base' //axios lib
-import Store from '../store' // Vue Store
-import userSettings from './platform' //platform JS
+import axios from './axios-base'
 import imageUtils from './imagesUtils'
-import helpers from './helpers'
+import helpers from './yieap-helpers'
 
 class FileChunk{
   static slice(file, blob, offset, chunkSize){
@@ -11,7 +9,10 @@ class FileChunk{
     return new Promise((resolve, reject) => {
       reader.onerror = () => {
         reader.abort();
-        reject(new DOMException("Problem parsing input file."));
+        reject({
+          message:'Error parsing',
+          statusCode:error.response.status
+        });
       };
       reader.onload = () => {
         resolve(reader.result);
@@ -60,7 +61,7 @@ export default class UploadTusMedia{
         })
 
         let idx = 1;
-        let retry = 1;
+        let retry = 0;
         while(offset < fileSize){
           //slice part of file
           let fileSlice = await FileChunk.slice(file,blobSlice,offset,(offset + chunkSize))
@@ -73,34 +74,26 @@ export default class UploadTusMedia{
             return error;
           })
           // send slice file to server
+
           let newOffset = await this.send({
             content: fileSlice.buffer,
             sliceChecksum: fileSlice.checksum,
             fileSize:fileSize,
             fileFullChecksum: fileFullChecksum,
             offset: offset,
-            filename: fileRename
+            filename: fileRename,
+            retry:retry
           })
-
-          // 3 tentivas de envio para o mesmo offset
-          if(retry >= 3 && newOffset == offset){
-            return{
-              message:'File upload error, upload canceled try later',
-              statusCode:460
-            };
-          }
-          else{
-            retry = retry + 1;
-          }
+          //retry number file send
+          retry = retry + 1
 
           //update offset
           offset = idx * newOffset
           if(offset === fileSize){
-            //DO SOMENTHING OR RETURN SOMENTHING
-            // Example create the thumbnails files and return the file or fileSrc
+            //genarate thumbnails
             let fileWithSrc = null;
             if(helpers.checkTypeMedia(file.type) == 'image'){
-              fileWithSrc = await imageUtils.generateThumbnail(file)
+              fileWithSrc = await imageUtils.readFile(file)
               .then((response) => {
                 return response;
               })
@@ -157,6 +150,12 @@ export default class UploadTusMedia{
         })
         .catch((error) => {
           if(error.response.status === 460){
+            if(params.retry === 3){
+              reject({
+                message:error.response.data,
+                statusCode:error.response.status
+              })
+            }
             resolve(error.response.headers['upload-offset'])
           }
           else{
