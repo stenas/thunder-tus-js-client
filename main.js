@@ -1,7 +1,7 @@
 let CryptoJS = require("crypto-js");
 import axios from './axios-base'
 import imageUtils from './imagesUtils'
-import helpers from './yieap-helpers'
+import helpers from './helpers'
 
 class FileChunk{
   static slice(file, blob, offset, chunkSize){
