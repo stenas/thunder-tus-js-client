@@ -1,2 +1,2 @@
-# thunder-tus-js-client
-Client-side TUS protocol implementation in javascript
+# Thunder Tus JS Client/Side
+Client-side Thunder TUS protocol implementation
